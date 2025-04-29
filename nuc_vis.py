@@ -12,12 +12,15 @@ plt.switch_backend('Agg')  # 禁用交互模式
 def create_scene_folders(base_path, scene_name):
     """创建场景对应的文件夹结构"""
     scene_path = os.path.join(base_path, scene_name)
+    # 新增两种数据类型的目录
+    data_types = ['data', 'det']
     folders = [
         'CAM_FRONT', 'CAM_FRONT_RIGHT', 'CAM_BACK_RIGHT',
         'CAM_BACK', 'CAM_BACK_LEFT', 'CAM_FRONT_LEFT', 'PointCloud'
     ]
-    for folder in folders:
-        os.makedirs(os.path.join(scene_path, folder), exist_ok=True)
+    for dtype in data_types:
+        for folder in folders:
+            os.makedirs(os.path.join(scene_path, dtype, folder), exist_ok=True)
     return scene_path
 
 def fig_to_cv_no_margin(fig):
@@ -64,44 +67,75 @@ def save_scene_data(nusc, scene_name, output_base):
     
     # 遍历保存每个样本
     for idx, sample in enumerate(tqdm(samples, desc=f'处理场景 {scene_name}')):
-        # 保存相机数据
+        # 保存相机数据（同时保存带标注和不带标注）
         for cam_name in ['CAM_FRONT', 'CAM_FRONT_RIGHT', 'CAM_BACK_RIGHT',
                         'CAM_BACK', 'CAM_BACK_LEFT', 'CAM_FRONT_LEFT']:
             cam_token = sample['data'][cam_name]
             sample_data = nusc.get('sample_data', cam_token)
             
+            # 生成无标注版本 (data目录)
             fig = plt.figure(figsize=(6, 3))
             ax = fig.add_subplot(111)
-            nusc.render_sample_data(cam_token, with_anns=True, ax=ax)
+            nusc.render_sample_data(cam_token, with_anns=False, ax=ax)
             ax.axis('off')
             ax.set_title('')
-
             save_path = os.path.join(
                 scene_path,
+                'data',  # 新增目录层级
                 cam_name,
                 f"{sample_data['timestamp']:018d}.jpg"
             )
-            # 使用新函数转换图形，去除白边
             cv2.imwrite(save_path, fig_to_cv_no_margin(fig))
             plt.close(fig)
+            
+            # 生成带标注版本 (det目录)
+            fig_det = plt.figure(figsize=(6, 3))
+            ax_det = fig_det.add_subplot(111)
+            nusc.render_sample_data(cam_token, with_anns=True, ax=ax_det)  # 修改为True
+            ax_det.axis('off')
+            ax_det.set_title('')
+            save_path_det = os.path.join(
+                scene_path,
+                'det',  # 新增目录层级
+                cam_name,
+                f"{sample_data['timestamp']:018d}.jpg"
+            )
+            cv2.imwrite(save_path_det, fig_to_cv_no_margin(fig_det))
+            plt.close(fig_det)
         
-        # 保存点云数据
+        # 保存点云数据（同时保存带标注和不带标注）
         lidar_token = sample['data']['LIDAR_TOP']
         sample_data = nusc.get('sample_data', lidar_token)
         
+        # 无标注版本
         fig = plt.figure(figsize=(6, 6))
         ax = fig.add_subplot(111)
-        nusc.render_sample_data(lidar_token, with_anns=True, ax=ax)
+        nusc.render_sample_data(lidar_token, with_anns=False, ax=ax)
         ax.axis('off')
         ax.set_title('')
         save_path = os.path.join(
             scene_path,
+            'data',  # 新增目录层级
             'PointCloud',
             f"{sample_data['timestamp']:018d}.jpg"
         )
-        # 使用新函数转换图形，去除白边
         cv2.imwrite(save_path, fig_to_cv_no_margin(fig))
         plt.close(fig)
+        
+        # 带标注版本
+        fig_det = plt.figure(figsize=(6, 6))
+        ax_det = fig_det.add_subplot(111)
+        nusc.render_sample_data(lidar_token, with_anns=True, ax=ax_det)  # 修改为True
+        ax_det.axis('off')
+        ax_det.set_title('')
+        save_path_det = os.path.join(
+            scene_path,
+            'det',  # 新增目录层级
+            'PointCloud',
+            f"{sample_data['timestamp']:018d}.jpg"
+        )
+        cv2.imwrite(save_path_det, fig_to_cv_no_margin(fig_det))
+        plt.close(fig_det)
         
         if (idx + 1) % 10 == 0:
             print(f"已处理 {idx + 1}/{len(samples)} 帧")
@@ -111,7 +145,7 @@ if __name__ == '__main__':
     DATAROOT = 'E:/DataSets/nuScenes'
     VERSION = 'v1.0-mini'
     OUTPUT_DIR = './scene_output'
-    SCENE_NAME = 'scene-0655'  # 修改为目标场景名称
+    SCENE_NAME = 'scene-0757'  # 修改为目标场景名称
     
     # 初始化数据集
     nusc = NuScenes(version=VERSION, dataroot=DATAROOT, verbose=False)

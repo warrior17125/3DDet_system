@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>3D检测系统场景查看器</title>
+    <title>三维目标检测系统</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -32,14 +32,6 @@
             color: red;
             text-align: center;
             margin: 20px 0;
-        }
-        .controls {
-            margin: 20px 0;
-            text-align: center;
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         .main-container {
             display: flex;
@@ -100,23 +92,40 @@
         }
         button {
             padding: 8px 20px;
-            background-color: #3498db;
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            transition: background 0.3s;
+            transition: all 0.3s;
             font-size: 14px;
             margin: 0 5px;
         }
         button:hover {
+            opacity: 0.9;
+        }
+        #loadSceneBtn {
+            background-color: #3498db;
+        }
+        #loadSceneBtn:hover {
             background-color: #2980b9;
+        }
+        #playPauseBtn {
+            background-color: #3498db;
+        }
+        #playPauseBtn:hover {
+            background-color: #2980b9;
+        }
+        #playPauseBtn.playing {
+            background-color: #e74c3c;
+        }
+        #playPauseBtn.playing:hover {
+            background-color: #c0392b;
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>3D检测系统场景查看器</h1>
+        <h1>三维目标检测系统</h1>
     </div>
     
     <form method="post" class="scene-selector">
@@ -126,7 +135,8 @@
             <option value="{{ folder }}" {% if selected_scene==folder %}selected{% endif %}>{{ folder }}</option>
             {% endfor %}
         </select>
-        <button type="submit">加载场景</button>
+        <button type="submit" id="loadSceneBtn">加载场景</button>
+        <button type="button" id="playPauseBtn">▶ 播放全部</button>
     </form>
 
     {% if error %}
@@ -134,11 +144,6 @@
     {% endif %}
 
     {% if sequences %}
-    <div class="controls">
-        <button onclick="playAll()">▶ 播放全部</button>
-        <button onclick="pauseAll()">⏸ 暂停全部</button>
-    </div>
-
     <div class="main-container">
         <div class="grid-group">
             {% for seq in sequences[:6] %}
@@ -165,11 +170,15 @@
     <script>
         let intervals = [];
         let currentFrames = Array(7).fill(0);
+        let isPlaying = false;
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        
         {% if sequences %}
         let imageLists = {{ sequences|map(attribute='images')|list|tojson }};
         {% else %}
         let imageLists = [];
         {% endif %}
+        
         const FRAME_INTERVAL = 120; // 固定帧间隔为120ms
 
         function updateFrame(panelIndex) {
@@ -191,12 +200,29 @@
                     intervals[i] = setInterval(() => updateFrame(i), FRAME_INTERVAL);
                 }
             }
+            isPlaying = true;
+            playPauseBtn.textContent = '⏸ 暂停全部';
+            playPauseBtn.classList.add('playing');
         }
 
         function pauseAll() {
             intervals.forEach(clearInterval);
             intervals = [];
+            isPlaying = false;
+            playPauseBtn.textContent = '▶ 播放全部';
+            playPauseBtn.classList.remove('playing');
         }
+
+        function togglePlay() {
+            if (isPlaying) {
+                pauseAll();
+            } else {
+                playAll();
+            }
+        }
+
+        // 绑定点击事件到切换按钮
+        playPauseBtn.addEventListener('click', togglePlay);
     </script>
 </body>
 </html>
