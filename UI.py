@@ -69,7 +69,6 @@ def index():
         # 重新排序前6个摄像头
         if len(sequences) >= 6:
             # 第一步：交换特定摄像头
-            # 修正括号闭合问题
             front_index = next((i for i, seq in enumerate(sequences[:6]) if seq['original_name'] == 'CAM_FRONT'), None)
             front_left_index = next((i for i, seq in enumerate(sequences[:6]) if seq['original_name'] == 'CAM_FRONT_LEFT'), None)
             back_index = next((i for i, seq in enumerate(sequences[:6]) if seq['original_name'] == 'CAM_BACK'), None)

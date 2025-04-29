@@ -112,13 +112,6 @@
         button:hover {
             background-color: #2980b9;
         }
-        #frameInterval {
-            padding: 6px;
-            width: 80px;
-            margin-left: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
     </style>
 </head>
 <body>
@@ -144,7 +137,6 @@
     <div class="controls">
         <button onclick="playAll()">▶ 播放全部</button>
         <button onclick="pauseAll()">⏸ 暂停全部</button>
-        帧间隔(ms): <input type="number" id="frameInterval" value="100" min="50" max="1000">
     </div>
 
     <div class="main-container">
@@ -178,6 +170,7 @@
         {% else %}
         let imageLists = [];
         {% endif %}
+        const FRAME_INTERVAL = 120; // 固定帧间隔为120ms
 
         function updateFrame(panelIndex) {
             if (panelIndex >= imageLists.length) return;
@@ -193,10 +186,9 @@
 
         function playAll() {
             pauseAll();
-            const interval = parseInt(document.getElementById('frameInterval').value);
             for(let i = 0; i < 7; i++) {
                 if (i < imageLists.length) {
-                    intervals[i] = setInterval(() => updateFrame(i), interval);
+                    intervals[i] = setInterval(() => updateFrame(i), FRAME_INTERVAL);
                 }
             }
         }
