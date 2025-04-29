@@ -1,141 +1,231 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
+    <meta charset="UTF-8">
     <title>三维目标检测系统</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f5f5f5;
+        :root {
+            --main-blue: #3498db;
+            --main-blue-dark: #217dbb;
+            --main-gray: #f5f5f5;
+            --card-bg: #fff;
+            --panel-bg: #f8f9fa;
+            --text-dark: #213547;
         }
+
+        body {
+            font-family: "Segoe UI", Arial, sans-serif;
+            margin: 0;
+            background-color: var(--main-gray);
+            color: var(--text-dark);
+        }
+
         .header {
             text-align: center;
-            margin-bottom: 20px;
+            padding: 2.5rem 1rem 1rem;
+            background: var(--card-bg);
+            box-shadow: 0 2px 6px rgba(44, 62, 80, 0.04);
         }
+        .header h1 {
+            letter-spacing: 2px;
+            font-size: 2.1rem;
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .top-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin: 1.8rem auto 1rem;
+            max-width: 900px;
+        }
+
         .scene-selector {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-            text-align: center;
+            background: var(--card-bg);
+            padding: 1.2rem 1rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(44,62,80,0.05);
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.8rem;
+            justify-content: center;
         }
         select {
-            padding: 8px 15px;
-            font-size: 16px;
-            border: 2px solid #ddd;
-            border-radius: 4px;
-            width: 300px;
-            margin-right: 10px;
+            padding: 10px 16px;
+            font-size: 1rem;
+            border: 1.5px solid #ccd8e1;
+            border-radius: 6px;
+            min-width: 180px;
         }
+        button {
+            padding: 10px 24px;
+            border-radius: 6px;
+            border: none;
+            background: var(--main-blue);
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: background 0.2s, box-shadow 0.2s;
+            box-shadow: 0 2px 10px rgba(52,152,219,0.06);
+            cursor: pointer;
+        }
+        button:hover, button:focus {
+            background: var(--main-blue-dark);
+        }
+        #playPauseBtn.playing {
+            background: #e74c3c;
+        }
+        #playPauseBtn.playing:hover, #playPauseBtn.playing:focus {
+            background: #c0392b;
+        }
+
         .error {
-            color: red;
+            color: #e74c3c;
+            background: #ffeae9;
+            border: 1px solid #f8c8c3;
+            border-radius: 6px;
+            max-width: 600px;
+            margin: 1rem auto;
+            padding: 0.8rem 1.2rem;
             text-align: center;
-            margin: 20px 0;
         }
-        .controls {
-            margin: 20px 0;
-            text-align: center;
-        }
+
         .group-container {
-            margin-bottom: 40px;
+            max-width: 1400px;
+            margin: 2rem auto 2.5rem;
+            background: var(--card-bg);
+            border-radius: 18px;
+            box-shadow: 0 4px 32px rgba(44,62,80,0.09);
+            padding: 1.4rem 1rem 2.2rem;
         }
+
         .group-title {
-            margin: 20px 0 10px;
-            color: #2c3e50;
-            font-size: 20px;
-            text-align: center;
-            padding: 10px;
-            background: #f8f9fa;
+            margin: 0 0 1rem 0;
+            color: var(--main-blue-dark);
+            font-size: 1.3rem;
+            font-weight: 600;
+            text-align: left;
+            padding: 0.7rem 1.2rem;
+            background: var(--panel-bg);
             border-radius: 8px;
+            letter-spacing: 2px;
+            box-shadow: 0 1px 5px rgba(44,62,80,0.04);
         }
+
         .main-container {
             display: flex;
-            gap: 20px;
-            max-width: 1800px;
+            gap: 2.3rem;
             margin: 0 auto;
+            flex-wrap: wrap;
         }
         .grid-group {
             flex: 2;
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
+            gap: 1.3rem;
+            min-width: 240px;
         }
         .featured-panel {
             flex: 1;
-            min-width: 400px;
+            min-width: 280px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
         }
+
         .video-panel {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
-            padding: 15px;
-            transition: transform 0.2s;
+            background: var(--panel-bg);
+            border-radius: 11px;
+            box-shadow: 0 2px 10px rgba(44,62,80,0.06);
+            padding: 0.6rem 0.7rem 1rem;
+            transition: transform 0.16s, box-shadow 0.16s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
         .video-panel:hover {
-            transform: translateY(-5px);
+            transform: translateY(-4px) scale(1.025);
+            box-shadow: 0 3px 18px rgba(52,152,219,0.13);
         }
         .video-panel h4 {
-            margin: 0 0 10px 0;
-            color: #333;
-            font-size: 14px;
+            margin: 0 0 0.6rem 0;
+            color: var(--main-blue-dark);
+            font-size: 1rem;
+            font-weight: 500;
             text-align: center;
+            letter-spacing: 1px;
         }
-        .featured-panel .video-panel {
-            height: calc(100% - 30px);
-        }
-        .featured-panel h4 {
-            font-size: 18px;
-            color: #2c3e50;
-        }
+
         .video-container {
             width: 100%;
             overflow: hidden;
-            background: #ececec;
-            border-radius: 6px;
+            background: #e3e6ea;
+            border-radius: 7px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 120px;
         }
         .grid-group .video-container {
-            height: 200px;
+            height: 180px;
+        }
+        .featured-panel .video-panel {
+            height: auto;
+            min-height: 100%;
+            margin-top: 0.3rem;
         }
         .featured-panel .video-container {
-            height: 500px;
+            height: 340px;
+            max-height: 380px;
         }
         img {
             width: 100%;
             height: 100%;
             object-fit: contain;
             transition: opacity 0.3s;
-        }
-        button {
-            padding: 8px 20px;
-            color: white;
-            border: none;
+            background: #f4f4f4;
             border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 14px;
-            margin: 0 5px;
         }
-        button:hover {
-            opacity: 0.9;
+
+        /* 响应式支持 */
+        @media (max-width: 1000px) {
+            .main-container {
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+            .featured-panel {
+                min-width: 0;
+            }
         }
-        #loadSceneBtn {
-            background-color: #3498db;
-        }
-        #loadSceneBtn:hover {
-            background-color: #2980b9;
-        }
-        #playPauseBtn {
-            background-color: #3498db;
-        }
-        #playPauseBtn:hover {
-            background-color: #2980b9;
-        }
-        #playPauseBtn.playing {
-            background-color: #e74c3c;
-        }
-        #playPauseBtn.playing:hover {
-            background-color: #c0392b;
+        @media (max-width: 700px) {
+            .top-controls {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            .scene-selector {
+                padding: 1rem 0.2rem;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            .group-container {
+                padding: 1rem 0.2rem 1.2rem;
+                box-shadow: 0 1px 6px rgba(44,62,80,0.10);
+            }
+            .main-container {
+                gap: 1rem;
+            }
+            .grid-group {
+                grid-template-columns: 1fr;
+                gap: 0.8rem;
+            }
+            .featured-panel .video-container {
+                height: 220px;
+            }
         }
     </style>
 </head>
@@ -144,28 +234,29 @@
         <h1>三维目标检测系统</h1>
     </div>
     
-    <form method="post" class="scene-selector">
-        <select name="scene_folder" required>
-            <option value="">请选择场景</option>
-            {% for folder in scene_folders %}
-            <option value="{{ folder }}" {% if selected_scene==folder %}selected{% endif %}>{{ folder }}</option>
-            {% endfor %}
-        </select>
-        <button type="submit" id="loadSceneBtn">加载场景</button>
-    </form>
+    <div class="top-controls">
+        <form method="post" class="scene-selector">
+            <select name="scene_folder" required>
+                <option value="">请选择场景</option>
+                {% for folder in scene_folders %}
+                <option value="{{ folder }}" {% if selected_scene==folder %}selected{% endif %}>{{ folder }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" id="loadSceneBtn">加载场景</button>
+        </form>
+        {% if groups %}
+        <button type="button" id="playPauseBtn">▶ 播放全部</button>
+        {% endif %}
+    </div>
 
     {% if error %}
     <div class="error">{{ error }}</div>
     {% endif %}
 
     {% if groups %}
-    <div class="controls">
-        <button type="button" id="playPauseBtn">▶ 播放全部</button>
-    </div>
-
     {% for group in groups %}
     <div class="group-container">
-        <h3 class="group-title">{{ group.name }} 数据组</h3>
+        <h3 class="group-title">{{ group.name }}</h3>
         <div class="main-container">
             <div class="grid-group">
                 {% for seq in group.sequences[:6] %}
@@ -258,7 +349,9 @@
         }
 
         // 绑定点击事件到切换按钮
-        playPauseBtn.addEventListener('click', togglePlay);
+        if (playPauseBtn) {
+            playPauseBtn.addEventListener('click', togglePlay);
+        }
     </script>
 </body>
 </html>
