@@ -33,6 +33,22 @@
             text-align: center;
             margin: 20px 0;
         }
+        .controls {
+            margin: 20px 0;
+            text-align: center;
+        }
+        .group-container {
+            margin-bottom: 40px;
+        }
+        .group-title {
+            margin: 20px 0 10px;
+            color: #2c3e50;
+            font-size: 20px;
+            text-align: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
         .main-container {
             display: flex;
             gap: 20px;
@@ -136,78 +152,98 @@
             {% endfor %}
         </select>
         <button type="submit" id="loadSceneBtn">加载场景</button>
-        <button type="button" id="playPauseBtn">▶ 播放全部</button>
     </form>
 
     {% if error %}
     <div class="error">{{ error }}</div>
     {% endif %}
 
-    {% if sequences %}
-    <div class="main-container">
-        <div class="grid-group">
-            {% for seq in sequences[:6] %}
-            <div class="video-panel">
-                <h4>{{ seq.name }}</h4>
-                <div class="video-container">
-                    <img id="frame-{{ loop.index0 }}" src="">
-                </div>
-            </div>
-            {% endfor %}
-        </div>
+    {% if groups %}
+    <div class="controls">
+        <button type="button" id="playPauseBtn">▶ 播放全部</button>
+    </div>
 
-        <div class="featured-panel">
-            <div class="video-panel">
-                <h4>{{ sequences[6].name }}</h4>
-                <div class="video-container">
-                    <img id="frame-6" src="">
+    {% for group in groups %}
+    <div class="group-container">
+        <h3 class="group-title">{{ group.name }} 数据组</h3>
+        <div class="main-container">
+            <div class="grid-group">
+                {% for seq in group.sequences[:6] %}
+                <div class="video-panel">
+                    <h4>{{ seq.name }}</h4>
+                    <div class="video-container">
+                        <img id="{{ group.name }}-frame-{{ loop.index0 }}" src="">
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="featured-panel">
+                <div class="video-panel">
+                    <h4>{{ group.sequences[6].name }}</h4>
+                    <div class="video-container">
+                        <img id="{{ group.name }}-frame-6" src="">
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+    {% endfor %}
     {% endif %}
 
     <script>
-        let intervals = [];
-        let currentFrames = Array(7).fill(0);
+        let intervals = new Map();
+        let currentFrames = new Map();
         let isPlaying = false;
         const playPauseBtn = document.getElementById('playPauseBtn');
         
-        {% if sequences %}
-        let imageLists = {{ sequences|map(attribute='images')|list|tojson }};
+        {% if groups %}
+        let imageGroups = {
+            {% for group in groups %}
+            "{{ group.name }}": {{ group.sequences|map(attribute='images')|list|tojson }},
+            {% endfor %}
+        };
         {% else %}
-        let imageLists = [];
+        let imageGroups = {};
         {% endif %}
-        
-        const FRAME_INTERVAL = 120; // 固定帧间隔为120ms
 
-        function updateFrame(panelIndex) {
-            if (panelIndex >= imageLists.length) return;
+        // 初始化帧索引
+        Object.keys(imageGroups).forEach(group => {
+            currentFrames.set(group, Array(7).fill(0));
+        });
+
+        const FRAME_INTERVAL = 120;
+
+        function updateFrame(group, panelIndex) {
+            const images = imageGroups[group][panelIndex];
+            const frameIndex = currentFrames.get(group)[panelIndex] % images.length;
             
-            const frameIndex = currentFrames[panelIndex] % imageLists[panelIndex].length;
-            fetch(`/get_image?path=${encodeURIComponent(imageLists[panelIndex][frameIndex])}`)
+            fetch(`/get_image?path=${encodeURIComponent(images[frameIndex])}`)
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById(`frame-${panelIndex}`).src = `data:image/jpeg;base64,${data.image}`;
+                    document.getElementById(`${group}-frame-${panelIndex}`).src = 
+                        `data:image/jpeg;base64,${data.image}`;
                 });
-            currentFrames[panelIndex]++;
+            
+            currentFrames.get(group)[panelIndex]++;
         }
 
         function playAll() {
             pauseAll();
-            for(let i = 0; i < 7; i++) {
-                if (i < imageLists.length) {
-                    intervals[i] = setInterval(() => updateFrame(i), FRAME_INTERVAL);
+            Object.keys(imageGroups).forEach(group => {
+                for(let i = 0; i < 7; i++) {
+                    const intervalId = setInterval(() => updateFrame(group, i), FRAME_INTERVAL);
+                    intervals.set(`${group}-${i}`, intervalId);
                 }
-            }
+            });
             isPlaying = true;
             playPauseBtn.textContent = '⏸ 暂停全部';
             playPauseBtn.classList.add('playing');
         }
 
         function pauseAll() {
-            intervals.forEach(clearInterval);
-            intervals = [];
+            intervals.forEach((id, key) => clearInterval(id));
+            intervals.clear();
             isPlaying = false;
             playPauseBtn.textContent = '▶ 播放全部';
             playPauseBtn.classList.remove('playing');
