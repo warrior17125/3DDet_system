@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>3D检测系统场景查看器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .scene-selector {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        select {
+            padding: 8px 15px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            width: 300px;
+            margin-right: 10px;
+        }
+        .error {
+            color: red;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .controls {
+            margin: 20px 0;
+            text-align: center;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .main-container {
+            display: flex;
+            gap: 20px;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+        .grid-group {
+            flex: 2;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+        .featured-panel {
+            flex: 1;
+            min-width: 400px;
+        }
+        .video-panel {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+            padding: 15px;
+            transition: transform 0.2s;
+        }
+        .video-panel:hover {
+            transform: translateY(-5px);
+        }
+        .video-panel h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 14px;
+            text-align: center;
+        }
+        .featured-panel .video-panel {
+            height: calc(100% - 30px);
+        }
+        .featured-panel h4 {
+            font-size: 18px;
+            color: #2c3e50;
+        }
+        .video-container {
+            width: 100%;
+            overflow: hidden;
+            background: #ececec;
+            border-radius: 6px;
+        }
+        .grid-group .video-container {
+            height: 200px;
+        }
+        .featured-panel .video-container {
+            height: 500px;
+        }
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: opacity 0.3s;
+        }
+        button {
+            padding: 8px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-size: 14px;
+            margin: 0 5px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        #frameInterval {
+            padding: 6px;
+            width: 80px;
+            margin-left: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>3D检测系统场景查看器</h1>
+    </div>
+    
+    <form method="post" class="scene-selector">
+        <select name="scene_folder" required>
+            <option value="">请选择场景</option>
+            {% for folder in scene_folders %}
+            <option value="{{ folder }}" {% if selected_scene==folder %}selected{% endif %}>{{ folder }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">加载场景</button>
+    </form>
+
+    {% if error %}
+    <div class="error">{{ error }}</div>
+    {% endif %}
+
+    {% if sequences %}
+    <div class="controls">
+        <button onclick="playAll()">▶ 播放全部</button>
+        <button onclick="pauseAll()">⏸ 暂停全部</button>
+        帧间隔(ms): <input type="number" id="frameInterval" value="100" min="50" max="1000">
+    </div>
+
+    <div class="main-container">
+        <div class="grid-group">
+            {% for seq in sequences[:6] %}
+            <div class="video-panel">
+                <h4>{{ seq.name }}</h4>
+                <div class="video-container">
+                    <img id="frame-{{ loop.index0 }}" src="">
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="featured-panel">
+            <div class="video-panel">
+                <h4>{{ sequences[6].name }}</h4>
+                <div class="video-container">
+                    <img id="frame-6" src="">
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <script>
+        let intervals = [];
+        let currentFrames = Array(7).fill(0);
+        {% if sequences %}
+        let imageLists = {{ sequences|map(attribute='images')|list|tojson }};
+        {% else %}
+        let imageLists = [];
+        {% endif %}
+
+        function updateFrame(panelIndex) {
+            if (panelIndex >= imageLists.length) return;
+            
+            const frameIndex = currentFrames[panelIndex] % imageLists[panelIndex].length;
+            fetch(`/get_image?path=${encodeURIComponent(imageLists[panelIndex][frameIndex])}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById(`frame-${panelIndex}`).src = `data:image/jpeg;base64,${data.image}`;
+                });
+            currentFrames[panelIndex]++;
+        }
+
+        function playAll() {
+            pauseAll();
+            const interval = parseInt(document.getElementById('frameInterval').value);
+            for(let i = 0; i < 7; i++) {
+                if (i < imageLists.length) {
+                    intervals[i] = setInterval(() => updateFrame(i), interval);
+                }
+            }
+        }
+
+        function pauseAll() {
+            intervals.forEach(clearInterval);
+            intervals = [];
+        }
+    </script>
+</body>
+</html>
