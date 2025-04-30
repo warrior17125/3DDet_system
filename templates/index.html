@@ -547,49 +547,77 @@
     </div>
     
     <style>
-    /* 新增加载动画样式 */
-    .loader-overlay {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(255, 255, 255, 0.98);
-        z-index: 9999;
-        justify-content: center;
-        align-items: center;
-    }
-    
-    .loader-content {
-        text-align: center;
-        width: 300px;
-    }
-    
-    .loading-text {
-        font-size: 1.2rem;
-        color: #444;
-        margin-bottom: 15px;
-        letter-spacing: 1px;
-    }
-    
-    .progress-container {
-        height: 6px;
-        background: #f0f0f0;
-        border-radius: 3px;
-        overflow: hidden;
-        box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
-    }
-    
-    .progress-bar {
-        width: 0%;
-        height: 100%;
-        background: linear-gradient(90deg, #2196F3, #64b5f6);
-        border-radius: 3px;
-        transition: width 5s cubic-bezier(0.4, 0, 0.2, 1);
-    }
+        /* 新增加载动画样式 */
+        .loader-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.98);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .loader-content {
+            text-align: center;
+            width: 300px;
+        }
+        
+        .loading-text {
+            font-size: 1.2rem;
+            color: #444;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+        }
+        
+        .progress-container {
+            height: 6px;
+            background: #f0f0f0;
+            border-radius: 3px;
+            overflow: hidden;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #2196F3, #64b5f6);
+            border-radius: 3px;
+            transition: width 5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
     </style>
-    
+
+    <style>
+        /* 新增表格样式 */
+        .empty-tip {
+            text-align: center;
+            color: #666;
+            padding: 2rem;
+            font-style: italic;
+        }
+
+        .data-table tr {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        #dataTableContainer::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        #dataTableContainer::-webkit-scrollbar-thumb {
+            background: #3498db;
+            border-radius: 3px;
+        }
+    </style>
     <script>
     // 修改表单提交事件处理
     document.querySelector('form').addEventListener('submit', function(e) {
@@ -625,13 +653,30 @@
             const modelPath = 'static/' + this.value;
             document.getElementById('currentModel').src = modelPath;
         });
+    </script>
 
-        // 三维检测系统功能
-        let intervals = new Map();
-        let currentFrames = new Map();
+    <script>
+        // 三维检测系统功能（全新实现）
+        let currentFrameIndex = 0;
         let isPlaying = false;
-        const playPauseBtn = document.getElementById('playPauseBtn');
-        
+        let playInterval;
+        const FRAME_INTERVAL = 520;
+        const ROW_INTERVAL = 100;
+        const backupData = {{ res_data|tojson|safe }};
+        const tableOrder = ['CAM_FRONT', 'CAM_FRONT_RIGHT', 'CAM_BACK_RIGHT', 
+                          'CAM_BACK', 'CAM_BACK_LEFT', 'CAM_FRONT_LEFT', 'PointCloud'];
+        const nameMapping = {
+            'CAM_FRONT': '前视角',
+            'CAM_FRONT_RIGHT': '右前视角',
+            'CAM_BACK_RIGHT': '右后视角',
+            'CAM_BACK': '后视角',
+            'CAM_BACK_LEFT': '左后视角', 
+            'CAM_FRONT_LEFT': '左前视角',
+            'PointCloud': '点云鸟瞰视角'
+        };
+        let currentTableIndex = 0;
+
+        // 初始化图像组数据
         {% if groups %}
         let imageGroups = {
             {% for group in groups %}
@@ -642,59 +687,152 @@
         let imageGroups = {};
         {% endif %}
 
-        // 初始化帧索引
-        Object.keys(imageGroups).forEach(group => {
-            currentFrames.set(group, Array(7).fill(0));
-        });
-
-        const FRAME_INTERVAL = 120;
-
-        function updateFrame(group, panelIndex) {
-            const images = imageGroups[group][panelIndex];
-            const frameIndex = currentFrames.get(group)[panelIndex] % images.length;
-            
-            fetch(`/get_image?path=${encodeURIComponent(images[frameIndex])}`)
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById(`${group}-frame-${panelIndex}`).src = 
-                        `data:image/jpeg;base64,${data.image}`;
-                });
-            
-            currentFrames.get(group)[panelIndex]++;
-        }
-
         function playAll() {
             pauseAll();
-            Object.keys(imageGroups).forEach(group => {
-                for(let i = 0; i < 7; i++) {
-                    const intervalId = setInterval(() => updateFrame(group, i), FRAME_INTERVAL);
-                    intervals.set(`${group}-${i}`, intervalId);
-                }
-            });
             isPlaying = true;
+            playInterval = setInterval(() => {
+                currentFrameIndex++;
+                updateAllFrames(currentFrameIndex);
+                updateTableWithFrame(currentFrameIndex);
+            }, FRAME_INTERVAL);
+            
             playPauseBtn.textContent = '⏸ 暂停';
             playPauseBtn.classList.add('playing');
         }
 
         function pauseAll() {
-            intervals.forEach((id, key) => clearInterval(id));
-            intervals.clear();
+            clearInterval(playInterval);
             isPlaying = false;
             playPauseBtn.textContent = '▶ 运行';
             playPauseBtn.classList.remove('playing');
         }
 
-        function togglePlay() {
-            if (isPlaying) {
-                pauseAll();
-            } else {
-                playAll();
-            }
+        function updateAllFrames(frameIndex) {
+            Object.keys(imageGroups).forEach(group => {
+                imageGroups[group].forEach((sequence, panelIndex) => {
+                    const images = sequence;
+                    if (images?.length) {
+                        const imgIndex = frameIndex % images.length;
+                        fetchImage(group, panelIndex, images[imgIndex]);
+                    }
+                });
+            });
         }
 
-        if (playPauseBtn) {
-            playPauseBtn.addEventListener('click', togglePlay);
+        function fetchImage(group, panelIndex, path) {
+            fetch(`/get_image?path=${encodeURIComponent(path)}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById(`${group}-frame-${panelIndex}`).src = 
+                        `data:image/jpeg;base64,${data.image}`;
+                });
         }
+
+        function updateTableWithFrame(frameIndex) {
+            const currentKey = tableOrder[currentTableIndex];
+            const frameData = getFrameData(currentKey, frameIndex);
+            if (!frameData) return;
+
+            const container = document.getElementById('dataTableScroll');
+            let table = container.querySelector('table');
+            
+            if (!table || frameIndex !== (currentFrameIndex - 1)) {
+                container.innerHTML = '';
+                table = createTable(currentKey);
+                container.appendChild(table);
+            }
+
+            frameData.objects.forEach((obj, idx) => {
+                setTimeout(() => {
+                    addTableRow(table, obj, isPointCloud(currentKey));
+                    scrollToBottom();
+                }, idx * ROW_INTERVAL);
+            });
+        }
+
+        function getFrameData(key, frameIndex) {
+            const frames = backupData[key] || [];
+            return frames[frameIndex % frames.length];
+        }
+
+        function isPointCloud(key) {
+            return key === 'PointCloud';
+        }
+
+        function createTable(key) {
+            const table = document.createElement('table');
+            table.className = 'data-table';
+            
+            const headers = isPointCloud(key) ? 
+                ['类别', 'x', 'y', 'z', '长度', '宽度', '高度', '偏航角'] :
+                ['类别', 'x', 'y', '高度', '宽度'];
+            
+            const headerRow = document.createElement('tr');
+            headers.forEach(text => {
+                const th = document.createElement('th');
+                th.textContent = text;
+                headerRow.appendChild(th);
+            });
+
+            table.appendChild(document.createElement('thead').appendChild(headerRow));
+            table.appendChild(document.createElement('tbody'));
+            return table;
+        }
+
+        function addTableRow(table, obj, isPointCloud) {
+            const row = document.createElement('tr');
+            const cells = isPointCloud ? 
+                [obj.类别, obj.x, obj.y, obj.z, obj.l, obj.w, obj.h, obj.yaw] :
+                [obj.类别, obj.x, obj.y, obj.h, obj.w];
+            
+            cells.forEach(text => {
+                const td = document.createElement('td');
+                td.textContent = text;
+                row.appendChild(td);
+            });
+
+            table.querySelector('tbody').appendChild(row);
+        }
+
+        function scrollToBottom() {
+            const container = document.getElementById('dataTableContainer');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // 事件监听
+        document.getElementById('playPauseBtn').addEventListener('click', function() {
+            isPlaying ? pauseAll() : playAll();
+        });
+
+        document.getElementById('prevTable').addEventListener('click', () => {
+            currentTableIndex = (currentTableIndex - 1 + 7) % 7;
+            updateCurrentTableName();
+            updateTableWithFrame(currentFrameIndex);
+        });
+
+        document.getElementById('nextTable').addEventListener('click', () => {
+            currentTableIndex = (currentTableIndex + 1) % 7;
+            updateCurrentTableName();
+            updateTableWithFrame(currentFrameIndex);
+        });
+
+        function updateCurrentTableName() {
+            document.getElementById('currentTableName').textContent = 
+                nameMapping[tableOrder[currentTableIndex]];
+        }
+
+        // 初始化状态
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('dataTableScroll').innerHTML = 
+                '<p class="empty-tip">点击"运行"按钮开始显示数据</p>';
+        });
+
+        document.querySelector('form').addEventListener('submit', () => {
+            currentFrameIndex = 0;
+            pauseAll();
+            document.getElementById('dataTableScroll').innerHTML = 
+                '<p class="empty-tip">场景已切换，点击"运行"按钮开始显示数据</p>';
+        });
     </script>
 
     <script>
