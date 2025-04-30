@@ -156,7 +156,7 @@ def index():
                          scene_folders=scene_folders,
                          groups=groups,
                          selected_scene=selected_scene,
-                         res_data=res_data)
+                         res_data=res_data)  # 确保传递res_data
 
 @app.route('/get_image')
 def get_image():

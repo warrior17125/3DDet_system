@@ -486,7 +486,7 @@
                 </div>
             </div>
 
-            <div class="static-section" id="static-res">
+            <div class="static-section" id="static-res" style="display: none;">
                 <div class="res-header">
                     <h3>检测结果数据</h3>
                     <div class="table-controls">
@@ -496,9 +496,7 @@
                     </div>
                 </div>
                 <div id="dataTableContainer">
-                    <div id="dataTableScroll">
-                        <!-- 表格将通过JavaScript动态生成 -->
-                    </div>
+                    <div id="dataTableScroll"></div>
                 </div>
             </div>
         </div>
@@ -547,77 +545,211 @@
     </div>
     
     <style>
-    /* 新增加载动画样式 */
-    .loader-overlay {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(255, 255, 255, 0.98);
-        z-index: 9999;
-        justify-content: center;
-        align-items: center;
-    }
-    
-    .loader-content {
-        text-align: center;
-        width: 300px;
-    }
-    
-    .loading-text {
-        font-size: 1.2rem;
-        color: #444;
-        margin-bottom: 15px;
-        letter-spacing: 1px;
-    }
-    
-    .progress-container {
-        height: 6px;
-        background: #f0f0f0;
-        border-radius: 3px;
-        overflow: hidden;
-        box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
-    }
-    
-    .progress-bar {
-        width: 0%;
-        height: 100%;
-        background: linear-gradient(90deg, #2196F3, #64b5f6);
-        border-radius: 3px;
-        transition: width 5s cubic-bezier(0.4, 0, 0.2, 1);
-    }
+        /* 添加行动画效果 */
+        @keyframes rowAppear {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .data-table tr {
+            animation: rowAppear 0.6s ease-out forwards;
+        }
+        /* 新增加载动画样式 */
+        .loader-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.98);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .loader-content {
+            text-align: center;
+            width: 300px;
+        }
+        
+        .loading-text {
+            font-size: 1.2rem;
+            color: #444;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+        }
+        
+        .progress-container {
+            height: 6px;
+            background: #f0f0f0;
+            border-radius: 3px;
+            overflow: hidden;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #2196F3, #64b5f6);
+            border-radius: 3px;
+            transition: width 5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
     </style>
     
     <script>
-    // 修改表单提交事件处理
-    document.querySelector('form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const loader = document.querySelector('.loader-overlay');
-        const progressBar = document.querySelector('.progress-bar');
-        const submitBtn = this.querySelector('button[type="submit"]');
-        
-        // 禁用按钮防止重复提交
-        submitBtn.disabled = true;
-        
-        // 显示加载动画
-        loader.style.display = 'flex';
-        progressBar.style.width = '0%';
-        
-        // 强制触发重绘
-        void progressBar.offsetWidth;
-        
-        // 启动进度条动画
-        progressBar.style.width = '100%';
-        
-        setTimeout(() => {
-            loader.style.display = 'none';
-            submitBtn.disabled = false;
-            this.submit();
-        }, 5000);
-    });
+        // 修改表单提交事件处理
+        document.querySelector('form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const loader = document.querySelector('.loader-overlay');
+            const progressBar = document.querySelector('.progress-bar');
+            const submitBtn = this.querySelector('button[type="submit"]');
+            
+            // 禁用按钮并显示加载
+            submitBtn.disabled = true;
+            loader.style.display = 'flex';
+            progressBar.style.width = '0%';
+            void progressBar.offsetWidth;
+            progressBar.style.width = '100%';
+            
+            // 保存表单数据用于后续提交
+            const formData = new FormData(this);
+            
+            setTimeout(async () => {
+                try {
+                    // 提交表单获取数据
+                    const response = await fetch('/', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const text = await response.text();
+                    
+                    // 解析响应内容
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(text, 'text/html');
+                    
+                    // 更新页面内容
+                    document.body.innerHTML = doc.body.innerHTML;
+                    
+                    // 初始化表格数据
+                    initTableData();
+                    
+                    // 显示结果区域并开始加载
+                    document.getElementById('static-res').style.display = 'block';
+                    startTableLoading();
+                    
+                } catch (error) {
+                    console.error('Error:', error);
+                } finally {
+                    loader.style.display = 'none';
+                    submitBtn.disabled = false;
+                }
+            }, 5000);
+        });
+
+        // 初始化表格数据
+        let currentTableData = [];
+        let currentColumns = [];
+
+        function initTableData() {
+            const rawData = JSON.parse(document.getElementById('resData').textContent);
+            currentTableData = Object.values(rawData).flatMap(view => 
+                view.flatMap(file => 
+                    file.objects.map(obj => ({
+                        ...obj,
+                        isPointCloud: view.key === 'PointCloud'
+                    }))
+                )
+            );
+            
+            currentColumns = Object.keys(rawData).some(k => k === 'PointCloud') ? 
+                ['类别', 'x', 'y', 'z', '长度', '宽度', '高度', '偏航角'] :
+                ['类别', 'x', 'y', '高度', '宽度'];
+        }
+
+        // 表格加载控制
+        let currentRow = 0;
+        let loadingInterval = null;
+
+        function startTableLoading() {
+            const container = document.getElementById('dataTableScroll');
+            container.innerHTML = '';
+            
+            // 创建表格结构
+            const table = document.createElement('table');
+            table.className = 'data-table';
+            
+            // 添加表头
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            currentColumns.forEach(header => {
+                const th = document.createElement('th');
+                th.textContent = header;
+                headerRow.appendChild(th);
+            });
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+            
+            // 添加tbody
+            const tbody = document.createElement('tbody');
+            table.appendChild(tbody);
+            container.appendChild(table);
+            
+            // 开始逐行加载
+            currentRow = 0;
+            loadingInterval = setInterval(() => {
+                if (currentRow >= currentTableData.length) {
+                    clearInterval(loadingInterval);
+                    return;
+                }
+                
+                const obj = currentTableData[currentRow];
+                const row = document.createElement('tr');
+                row.style.opacity = '0';
+                
+                if (obj.isPointCloud) {
+                    row.innerHTML = `
+                        <td>${obj.类别}</td>
+                        <td>${obj.x}</td>
+                        <td>${obj.y}</td>
+                        <td>${obj.z}</td>
+                        <td>${obj.l}</td>
+                        <td>${obj.w}</td>
+                        <td>${obj.h}</td>
+                        <td>${obj.yaw}</td>
+                    `;
+                } else {
+                    row.innerHTML = `
+                        <td>${obj.类别}</td>
+                        <td>${obj.x}</td>
+                        <td>${obj.y}</td>
+                        <td>${obj.h}</td>
+                        <td>${obj.w}</td>
+                    `;
+                }
+                
+                tbody.appendChild(row);
+                // 触发动画
+                setTimeout(() => {
+                    row.style.opacity = '1';
+                }, 10);
+                
+                currentRow++;
+                
+                // 自动滚动
+                container.scrollTop = container.scrollHeight;
+            }, 200); // 调整间隔时间控制速度
+        }
     </script>
+    {% if res_data %}
+    <script id="resData" type="application/json">{{ res_data|tojson|safe }}</script>
+    {% endif %}s
 
     <script>
         // 模型选择功能
