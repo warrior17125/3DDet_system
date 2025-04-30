@@ -295,6 +295,19 @@
             overflow-x: auto;
         }
 
+        #dataTableContainer {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+        }
+
+        #dataTableScroll {
+            min-width: 100%;
+            display: inline-block;
+        }
+
         .data-table {
             width: 100%;
             border-collapse: collapse;
@@ -303,22 +316,32 @@
 
         .data-table th,
         .data-table td {
-            padding: 12px 15px;
+            padding: 10px 12px;
             text-align: center;
-            border: 1px solid #ddd;
+            border-bottom: 1px solid #ddd;
+            white-space: nowrap;
         }
 
         .data-table th {
+            position: sticky;
+            top: 0;
             background-color: var(--main-blue);
             color: white;
-        }
-
-        .data-table tr:nth-child(even) {
-            background-color: #f9f9f9;
+            z-index: 1;
         }
 
         .data-table tr:hover {
-            background-color: #f1f1f1;
+            background-color: #f5f5f5;
+        }
+
+        /* 调整列宽 */
+        .data-table td:nth-child(1),
+        .data-table th:nth-child(1) {
+            min-width: 80px;
+        }
+        .data-table td:nth-child(n+2),
+        .data-table th:nth-child(n+2) {
+            min-width: 70px;
         }
         
         #static-model {
@@ -465,15 +488,17 @@
 
             <div class="static-section" id="static-res">
                 <div class="res-header">
-                    <h3>检测信息</h3>
+                    <h3>检测结果数据</h3>
                     <div class="table-controls">
                         <button id="prevTable" class="table-btn">❮</button>
                         <span id="currentTableName">前视角</span>
                         <button id="nextTable" class="table-btn">❯</button>
                     </div>
                 </div>
-                <div id="dataTable">
-                    <!-- 表格将通过JavaScript动态生成 -->
+                <div id="dataTableContainer">
+                    <div id="dataTableScroll">
+                        <!-- 表格将通过JavaScript动态生成 -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -696,7 +721,7 @@
             
             const tableData = resData[currentKey] || [];
             const isPointCloud = currentKey === 'PointCloud';
-            const container = document.getElementById('dataTable');
+            const container = document.getElementById('dataTableScroll');
             
             // 清空现有表格
             container.innerHTML = '';
@@ -710,12 +735,12 @@
             const table = document.createElement('table');
             table.className = 'data-table';
             
-            // 创建表头
+            // 创建表头（去掉文件名列）
             const thead = document.createElement('thead');
             const headerRow = document.createElement('tr');
             const headers = isPointCloud ? 
-                ['文件名', '类别', 'x', 'y', 'z', '长度', '宽度', '高度', '偏航角'] :
-                ['文件名', '类别', 'x', 'y', '高度', '宽度'];
+                ['类别', 'x', 'y', 'z', '长度', '宽度', '高度', '偏航角'] :
+                ['类别', 'x', 'y', '高度', '宽度'];
             
             headers.forEach(headerText => {
                 const th = document.createElement('th');
@@ -725,22 +750,14 @@
             thead.appendChild(headerRow);
             table.appendChild(thead);
 
-            // 创建表格内容
+            // 创建表格内容（去掉文件名）
             const tbody = document.createElement('tbody');
             tableData.forEach(fileData => {
-                fileData.objects.forEach((obj, objIndex) => {
+                fileData.objects.forEach(obj => {
                     const row = document.createElement('tr');
-                    // 文件名只在第一个对象显示
-                    if (objIndex === 0) {
-                        const fileNameCell = document.createElement('td');
-                        fileNameCell.rowSpan = fileData.objects.length;
-                        fileNameCell.textContent = fileData.filename;
-                        row.appendChild(fileNameCell);
-                    }
                     
-                    // 添加对象数据
                     if (isPointCloud) {
-                        row.innerHTML += `
+                        row.innerHTML = `
                             <td>${obj.类别}</td>
                             <td>${obj.x}</td>
                             <td>${obj.y}</td>
@@ -751,7 +768,7 @@
                             <td>${obj.yaw}</td>
                         `;
                     } else {
-                        row.innerHTML += `
+                        row.innerHTML = `
                             <td>${obj.类别}</td>
                             <td>${obj.x}</td>
                             <td>${obj.y}</td>
