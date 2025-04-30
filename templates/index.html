@@ -41,7 +41,7 @@
             letter-spacing: 2px;
             font-size: 2.1rem;
             font-weight: 600;
-            pointer-events: none; /* 不影响右侧表单操作 */
+            pointer-events: none;
             user-select: none;
         }
         .scene-selector {
@@ -98,7 +98,7 @@
 
         .group-container {
             max-width: 1600px;
-            margin: 1.0rem 1.0rem 1.0rem auto;
+            margin: 0 0 1.5rem 0;
             background: var(--card-bg);
             border-radius: 18px;
             box-shadow: 0 4px 32px rgba(44,62,80,0.09);
@@ -202,6 +202,76 @@
             border-radius: 4px;
         }
 
+        /* 新增布局样式 */
+        .main-content {
+            display: flex;
+            gap: 1.5rem;
+            padding: 1rem;
+        }
+
+        #static-area {
+            width: 320px;
+            min-width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        #dynamic-area {
+            flex-grow: 1;
+            min-width: 0;
+        }
+
+        .static-section {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.2rem;
+            box-shadow: 0 2px 12px rgba(44,62,80,0.05);
+        }
+
+        #static-image {
+            height: 240px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #static-image img {
+            max-width: 80%;
+            max-height: 80%;
+            object-fit: contain;
+        }
+
+        #static-model {
+            height: 400px;
+        }
+
+        .model-selector {
+            margin-bottom: 1rem;
+        }
+
+        #modelPreview {
+            width: 100%;
+            height: calc(100% - 50px);
+            background: var(--panel-bg);
+            border-radius: 8px;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #modelPreview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        /* 调整原有头部样式 */
+        .header {
+            z-index: 10;
+        }
+
         /* 响应式支持 */
         @media (max-width: 1100px) {
             .header {
@@ -223,7 +293,23 @@
                 align-self: flex-end;
                 margin-top: 1rem;
             }
+            
+            .main-content {
+                flex-direction: column;
+            }
+            
+            #static-area {
+                width: 100%;
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+            
+            #static-image, #static-model {
+                flex: 1;
+                min-width: 300px;
+            }
         }
+        
         @media (max-width: 700px) {
             .header {
                 flex-direction: column;
@@ -247,6 +333,10 @@
                 gap: 0.5rem;
                 min-width: 0;
             }
+            
+            #static-image, #static-model {
+                min-width: 100%;
+            }
         }
     </style>
 </head>
@@ -269,36 +359,68 @@
     <div class="error">{{ error }}</div>
     {% endif %}
 
-    {% if groups %}
-    {% for group in groups %}
-    <div class="group-container">
-        <h3 class="group-title">{{ group.name }}</h3>
-        <div class="main-container">
-            <div class="grid-group">
-                {% for seq in group.sequences[:6] %}
-                <div class="video-panel">
-                    <h4>{{ seq.name }}</h4>
-                    <div class="video-container">
-                        <img id="{{ group.name }}-frame-{{ loop.index0 }}" src="">
-                    </div>
-                </div>
-                {% endfor %}
+    <div class="main-content">
+        <!-- 左侧静态区域 -->
+        <div id="static-area">
+            <div class="static-section" id="static-image">
+                <img src="static/camera.png" alt="Camera View">
             </div>
-
-            <div class="featured-panel">
-                <div class="video-panel">
-                    <h4>{{ group.sequences[6].name }}</h4>
-                    <div class="video-container">
-                        <img id="{{ group.name }}-frame-6" src="">
-                    </div>
+            
+            <div class="static-section" id="static-model">
+                <div class="model-selector">
+                    <select id="modelSelect">
+                        <option value="SMTRFusion.png">SMTRFusion 模型</option>
+                        <option value="DeFusion.png">DeFusion 模型</option>
+                        <option value="UniFusion.png">UniFusion 模型</option>
+                    </select>
+                </div>
+                <div id="modelPreview">
+                    <img id="currentModel" src="static/SMTRFusion.png" alt="Selected Model">
                 </div>
             </div>
         </div>
+
+        <!-- 右侧动态区域 -->
+        <div id="dynamic-area">
+            {% if groups %}
+            {% for group in groups %}
+            <div class="group-container">
+                <h3 class="group-title">{{ group.name }}</h3>
+                <div class="main-container">
+                    <div class="grid-group">
+                        {% for seq in group.sequences[:6] %}
+                        <div class="video-panel">
+                            <h4>{{ seq.name }}</h4>
+                            <div class="video-container">
+                                <img id="{{ group.name }}-frame-{{ loop.index0 }}" src="">
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="featured-panel">
+                        <div class="video-panel">
+                            <h4>{{ group.sequences[6].name }}</h4>
+                            <div class="video-container">
+                                <img id="{{ group.name }}-frame-6" src="">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            {% endif %}
+        </div>
     </div>
-    {% endfor %}
-    {% endif %}
 
     <script>
+        // 模型选择功能
+        document.getElementById('modelSelect').addEventListener('change', function() {
+            const modelPath = 'static/' + this.value;
+            document.getElementById('currentModel').src = modelPath;
+        });
+
+        // 原有三维检测系统功能
         let intervals = new Map();
         let currentFrames = new Map();
         let isPlaying = false;
