@@ -202,78 +202,85 @@
             border-radius: 4px;
         }
 
-        /* 新增布局样式 */
-        .main-content {
-            display: flex;
-            gap: 1.0rem;
-            padding: 1rem;
-        }
-
-        #static-area {
-            width: 900px;
-            min-width: 900px;
-            height: 1196.4px;
-            min-height: 1196.4px;
-            display: flex;
-            flex-direction: column;
-            gap: 1.0rem;
-            
-        }
-
-        #dynamic-area {
-            flex-grow: 1;
-            min-width: 0;
-        }
-
+        /* 修复模型区域边框 */
         .static-section {
-            height: 600px;
             background: var(--card-bg);
             border-radius: 12px;
             padding: 1.2rem;
-            box-shadow: 0 2px 12px rgba(44,62,80,0.05);
+            box-shadow: 0 2px 12px rgba(44,62,80,0.05); /* 恢复外框阴影 */
+            margin-bottom: 1rem; /* 添加间距 */
         }
-
+        
+        /* 新增双图布局样式 */
         #static-image {
             height: 300px;
             display: flex;
-            align-items: center;
-            justify-content: center;
+            padding: 1rem;
         }
-
-        #static-image img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
+        .image-pair {
+            display: flex;
+            gap: 1rem;
+            width: 100%;
+            height: 100%;
         }
-
+        .image-wrapper {
+            height: 100%;
+            background: var(--panel-bg);
+            border-radius: 8px;
+            padding: 0.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .image-wrapper:first-child {
+            flex: 0.7; /* camera 图片宽度占比 40% */
+        }
+        .image-wrapper:last-child {
+            flex: 1.3; /* car 图片宽度占比 60% */
+        }
+        
+        /* 模型预览区域特别调整 */
         #static-model {
             height: 500px;
+            /* 保持与static-section相同的边框样式 */
         }
-
-        .model-selector {
-            margin-bottom: 1rem;
-        }
-
         #modelPreview {
             width: 860px;
             height: calc(100% - 50px);
             background: var(--panel-bg);
             border-radius: 8px;
             padding: 0rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
-
-        #modelPreview img {
-            max-width: 100%;
-            max-height: 100%;
+        
+        /* 响应式调整 */
+        @media (max-width: 1100px) {
+            .static-section {
+                margin-bottom: 0.5rem; /* 缩小移动端间距 */
+            }
+            #static-model {
+                min-width: 100%;
+            }
+        }
+        .image-wrapper img {
+            width: 100%;
+            height: 100%;
             object-fit: contain;
         }
 
-        /* 调整原有头部样式 */
-        .header {
-            z-index: 10;
+        /* 主内容布局 */
+        .main-content {
+            display: flex;
+            gap: 1.0rem;
+            padding: 1rem;
+        }
+        #static-area {
+            width: 900px;
+            min-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 1.0rem;
+        }
+        #dynamic-area {
+            flex-grow: 1;
+            min-width: 0;
         }
 
         /* 响应式支持 */
@@ -290,56 +297,38 @@
                 transform: none;
                 text-align: center;
                 margin-bottom: 0.5rem;
-                pointer-events: auto;
-                user-select: auto;
             }
             .scene-selector {
                 align-self: flex-end;
                 margin-top: 1rem;
             }
-            
             .main-content {
                 flex-direction: column;
             }
-            
             #static-area {
                 width: 100%;
                 flex-direction: row;
                 flex-wrap: wrap;
             }
-            
-            #static-image, #static-model {
-                flex: 1;
-                min-width: 300px;
+            .image-pair {
+                flex-direction: column;
+            }
+            .image-wrapper {
+                max-width: 100%;
+                height: 50%;
+            }
+            #static-model {
+                min-width: 100%;
             }
         }
         
         @media (max-width: 700px) {
             .header {
-                flex-direction: column;
-                align-items: stretch;
                 padding: 1.2rem 0.2rem 0.6rem 0.2rem;
-                min-height: 110px;
-            }
-            .header h1 {
-                position: static;
-                transform: none;
-                text-align: center;
-                margin-bottom: 0.5rem;
-                pointer-events: auto;
-                user-select: auto;
             }
             .scene-selector {
-                align-self: flex-end;
-                margin-top: 0.8rem;
                 padding: 0.8rem 0.2rem;
                 flex-direction: column;
-                gap: 0.5rem;
-                min-width: 0;
-            }
-            
-            #static-image, #static-model {
-                min-width: 100%;
             }
         }
     </style>
@@ -367,9 +356,17 @@
         <!-- 左侧静态区域 -->
         <div id="static-area">
             <div class="static-section" id="static-image">
-                <img src="static/camera.png" alt="Camera View">
+                <div class="image-pair">
+                    <div class="image-wrapper">
+                        <img src="static/camera.png" alt="Camera View">
+                    </div>
+                    <div class="image-wrapper">
+                        <img src="static/car.png" alt="Car View">
+                    </div>
+                </div>
             </div>
             
+            <!-- 修复后的模型区域 -->
             <div class="static-section" id="static-model">
                 <div class="model-selector">
                     <select id="modelSelect">
@@ -424,7 +421,7 @@
             document.getElementById('currentModel').src = modelPath;
         });
 
-        // 原有三维检测系统功能
+        // 三维检测系统功能
         let intervals = new Map();
         let currentFrames = new Map();
         let isPlaying = false;
@@ -490,7 +487,6 @@
             }
         }
 
-        // 绑定点击事件到切换按钮
         if (playPauseBtn) {
             playPauseBtn.addEventListener('click', togglePlay);
         }
