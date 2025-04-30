@@ -13,20 +13,18 @@
             --panel-bg: #f8f9fa;
             --text-dark: #213547;
         }
-
         body {
             font-family: "Segoe UI", Arial, sans-serif;
             margin: 0;
             background-color: var(--main-gray);
             color: var(--text-dark);
         }
-
         .header {
             position: relative;
             display: flex;
             justify-content: flex-end;
             align-items: center;
-            padding: 0.0rem 0.0rem 0.0rem 0.0rem;
+            padding: 0;
             background: var(--card-bg);
             box-shadow: 0 2px 6px rgba(54, 80, 44, 0.365);
             min-height: 80px;
@@ -84,7 +82,6 @@
         #playPauseBtn.playing:hover, #playPauseBtn.playing:focus {
             background: #c0392b;
         }
-
         .error {
             color: #e74c3c;
             background: #ffeae9;
@@ -96,29 +93,70 @@
             text-align: center;
         }
 
-        /* ===== 主体横向 flex 布局 ===== */
+        /* 主体横向布局 */
         .main-flex-layout {
             display: flex;
             flex-direction: row;
-            align-items: flex-start;
-            gap: 2.2rem;
+            align-items: center;
+            gap: 0.0rem;
             margin: 0.5rem 0 0.5rem 0rem;
             padding: 0 0rem;
         }
+        .static-icons-area {
+            height: 1172px;
+            width: 600px;
+            min-width: 150px;
+            background: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 4px 24px rgba(44,62,80,0.07);
+            padding: 0rem 0rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 0.0rem;
+            flex-shrink: 0;
+        }
+        .static-icons-top, .static-icons-bottom {
+            height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            margin: 1rem 1rem 1rem 1rem;
+            padding: 1.5rem 2rem 1.5rem 2rem;
+        }
+        .static-icons-area img {
+            width: 400px;
+            height: 400px;
+            object-fit: contain;
+            border-radius: 14px;
+            box-shadow: 0 2px 10px rgba(44,62,80,0.10);
+            background: #fff;
+            transition: box-shadow 0.2s;
+        }
+        .static-icons-area img:hover {
+            box-shadow: 0 4px 24px rgba(52,152,219,0.13);
+        }
+
+        .dynamic-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.0rem;
+        }
 
         .group-container {
-            max-width: 1600px;
-            margin: 1.0rem 1.0rem 1.0rem auto;
+            margin: 1rem 1rem 1rem 1rem;
             background: var(--card-bg);
             border-radius: 18px;
             box-shadow: 0 4px 32px rgba(44,62,80,0.09);
-            padding: 1.0rem 1rem 2.2rem;
+            padding: 1.5rem 2rem 1.5rem 2rem;
             display: flex;
-            flex-direction: row;
-            gap: 2rem;
+            flex-direction: column;
+            gap: 0rem;
             flex: 1;
         }
-
         .group-title {
             margin: 0 0 1rem 0;
             color: var(--main-blue-dark);
@@ -131,11 +169,10 @@
             letter-spacing: 2px;
             box-shadow: 0 1px 5px rgba(44,62,80,0.04);
         }
-
         .main-container {
             display: flex;
             gap: 1.0rem;
-            margin: 0 auto;
+            margin: 0 0;
             flex-wrap: wrap;
         }
         .grid-group {
@@ -152,7 +189,6 @@
             justify-content: flex-start;
             max-width: 480px;
         }
-
         .video-panel {
             height: 230px;
             background: var(--panel-bg);
@@ -177,7 +213,6 @@
             text-align: center;
             letter-spacing: 1px;
         }
-
         .video-container {
             width: 100%;
             overflow: hidden;
@@ -216,34 +251,6 @@
             border-radius: 4px;
         }
 
-        /* 静态图标区域样式 */
-        .static-icons-area {
-            height: 500px;
-            width: 200px;
-            background: var(--card-bg);
-            border-radius: 15px;
-            box-shadow: 0 4px 24px rgba(44,62,80,0.07);
-            padding: 0rem 0rem 0rem 0rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            gap: 2.2rem;
-            flex-shrink: 0;
-        }
-        .static-icons-area img {
-            width: 70px;
-            height: 70px;
-            object-fit: contain;
-            border-radius: 14px;
-            box-shadow: 0 2px 10px rgba(44,62,80,0.10);
-            background: #fff;
-            transition: box-shadow 0.2s;
-        }
-        .static-icons-area img:hover {
-            box-shadow: 0 4px 24px rgba(52,152,219,0.13);
-        }
-
         @media (max-width: 1100px) {
             .header {
                 flex-direction: column;
@@ -270,6 +277,9 @@
                 margin-top: 1.2rem;
                 align-items: stretch;
             }
+            .dynamic-area {
+                gap: 1.2rem;
+            }
             .group-container {
                 flex-direction: column;
                 gap: 1rem;
@@ -281,6 +291,11 @@
                 margin: 0 auto;
                 max-width: 100%;
                 justify-content: center;
+                width: 100%;
+            }
+            .static-icons-top, .static-icons-bottom {
+                flex-direction: row;
+                gap: 1rem;
             }
         }
         @media (max-width: 700px) {
@@ -310,6 +325,9 @@
                 flex-direction: column;
                 gap: 0.7rem;
             }
+            .dynamic-area {
+                gap: 0.7rem;
+            }
             .group-container {
                 flex-direction: column;
                 gap: 0.6rem;
@@ -321,6 +339,11 @@
                 margin: 0 auto;
                 max-width: 100%;
                 justify-content: center;
+                width: 100%;
+            }
+            .static-icons-top, .static-icons-bottom {
+                flex-direction: row;
+                gap: 0.6rem;
             }
         }
     </style>
@@ -345,60 +368,37 @@
     {% endif %}
 
     {% if groups %}
-    <!-- 只在第一个 group-container 前加 static-icons-area -->
     <div class="main-flex-layout">
+        <!-- 左侧静态图标分上下两区 -->
         <div class="static-icons-area">
-            <img src="/static/car.png" alt="car" title="车辆">
-            <img src="/static/camera.png" alt="camera" title="摄像头">
-            <img src="/static/map.png" alt="map" title="地图">
-        </div>
-        <div style="flex:1;">
-            <div class="group-container">
-                <div style="flex:1;">
-                    <h3 class="group-title">{{ groups[0].name }}</h3>
-                    <div class="main-container">
-                        <div class="grid-group">
-                            {% for seq in groups[0].sequences[:6] %}
-                            <div class="video-panel">
-                                <h4>{{ seq.name }}</h4>
-                                <div class="video-container">
-                                    <img id="{{ groups[0].name }}-frame-{{ loop.index0 }}" src="">
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                        <div class="featured-panel">
-                            <div class="video-panel">
-                                <h4>{{ groups[0].sequences[6].name }}</h4>
-                                <div class="video-container">
-                                    <img id="{{ groups[0].name }}-frame-6" src="">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div class="static-icons-top">
+                <img src="/static/camera.png" alt="camera" title="摄像头">
             </div>
-            {% for group in groups[1:] %}
+            <div class="static-icons-bottom">
+                <!-- 你可以再加更多icon -->
+            </div>
+        </div>
+        <!-- 右侧动态区 -->
+        <div class="dynamic-area">
+            {% for group in groups %}
             <div class="group-container">
-                <div style="flex:1;">
-                    <h3 class="group-title">{{ group.name }}</h3>
-                    <div class="main-container">
-                        <div class="grid-group">
-                            {% for seq in group.sequences[:6] %}
-                            <div class="video-panel">
-                                <h4>{{ seq.name }}</h4>
-                                <div class="video-container">
-                                    <img id="{{ group.name }}-frame-{{ loop.index0 }}" src="">
-                                </div>
+                <h3 class="group-title">{{ group.name }}</h3>
+                <div class="main-container">
+                    <div class="grid-group">
+                        {% for seq in group.sequences[:6] %}
+                        <div class="video-panel">
+                            <h4>{{ seq.name }}</h4>
+                            <div class="video-container">
+                                <img id="{{ group.name }}-frame-{{ loop.index0 }}" src="">
                             </div>
-                            {% endfor %}
                         </div>
-                        <div class="featured-panel">
-                            <div class="video-panel">
-                                <h4>{{ group.sequences[6].name }}</h4>
-                                <div class="video-container">
-                                    <img id="{{ group.name }}-frame-6" src="">
-                                </div>
+                        {% endfor %}
+                    </div>
+                    <div class="featured-panel">
+                        <div class="video-panel">
+                            <h4>{{ group.sequences[6].name }}</h4>
+                            <div class="video-container">
+                                <img id="{{ group.name }}-frame-6" src="">
                             </div>
                         </div>
                     </div>
