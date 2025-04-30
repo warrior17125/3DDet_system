@@ -205,16 +205,19 @@
         /* 新增布局样式 */
         .main-content {
             display: flex;
-            gap: 1.5rem;
+            gap: 1.0rem;
             padding: 1rem;
         }
 
         #static-area {
-            width: 320px;
-            min-width: 320px;
+            width: 900px;
+            min-width: 900px;
+            height: 1196.4px;
+            min-height: 1196.4px;
             display: flex;
             flex-direction: column;
-            gap: 1.5rem;
+            gap: 1.0rem;
+            
         }
 
         #dynamic-area {
@@ -223,6 +226,7 @@
         }
 
         .static-section {
+            height: 600px;
             background: var(--card-bg);
             border-radius: 12px;
             padding: 1.2rem;
@@ -230,20 +234,20 @@
         }
 
         #static-image {
-            height: 240px;
+            height: 300px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
         #static-image img {
-            max-width: 80%;
-            max-height: 80%;
+            max-width: 100%;
+            max-height: 100%;
             object-fit: contain;
         }
 
         #static-model {
-            height: 400px;
+            height: 500px;
         }
 
         .model-selector {
@@ -251,11 +255,11 @@
         }
 
         #modelPreview {
-            width: 100%;
+            width: 860px;
             height: calc(100% - 50px);
             background: var(--panel-bg);
             border-radius: 8px;
-            padding: 1rem;
+            padding: 0rem;
             display: flex;
             align-items: center;
             justify-content: center;
