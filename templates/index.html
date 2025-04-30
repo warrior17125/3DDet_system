@@ -41,7 +41,7 @@
             letter-spacing: 2px;
             font-size: 2.1rem;
             font-weight: 600;
-            pointer-events: none; /* 不影响右侧表单操作 */
+            pointer-events: none;
             user-select: none;
         }
         .scene-selector {
@@ -96,6 +96,16 @@
             text-align: center;
         }
 
+        /* ===== 主体横向 flex 布局 ===== */
+        .main-flex-layout {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            gap: 2.2rem;
+            margin: 0.5rem 0 0.5rem 0rem;
+            padding: 0 0rem;
+        }
+
         .group-container {
             max-width: 1600px;
             margin: 1.0rem 1.0rem 1.0rem auto;
@@ -103,6 +113,10 @@
             border-radius: 18px;
             box-shadow: 0 4px 32px rgba(44,62,80,0.09);
             padding: 1.0rem 1rem 2.2rem;
+            display: flex;
+            flex-direction: row;
+            gap: 2rem;
+            flex: 1;
         }
 
         .group-title {
@@ -202,7 +216,34 @@
             border-radius: 4px;
         }
 
-        /* 响应式支持 */
+        /* 静态图标区域样式 */
+        .static-icons-area {
+            height: 500px;
+            width: 200px;
+            background: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 4px 24px rgba(44,62,80,0.07);
+            padding: 0rem 0rem 0rem 0rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 2.2rem;
+            flex-shrink: 0;
+        }
+        .static-icons-area img {
+            width: 70px;
+            height: 70px;
+            object-fit: contain;
+            border-radius: 14px;
+            box-shadow: 0 2px 10px rgba(44,62,80,0.10);
+            background: #fff;
+            transition: box-shadow 0.2s;
+        }
+        .static-icons-area img:hover {
+            box-shadow: 0 4px 24px rgba(52,152,219,0.13);
+        }
+
         @media (max-width: 1100px) {
             .header {
                 flex-direction: column;
@@ -222,6 +263,24 @@
             .scene-selector {
                 align-self: flex-end;
                 margin-top: 1rem;
+            }
+            .main-flex-layout {
+                flex-direction: column;
+                gap: 1.2rem;
+                margin-top: 1.2rem;
+                align-items: stretch;
+            }
+            .group-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            .static-icons-area {
+                flex-direction: row;
+                gap: 1.2rem;
+                padding: 1rem 0.2rem;
+                margin: 0 auto;
+                max-width: 100%;
+                justify-content: center;
             }
         }
         @media (max-width: 700px) {
@@ -247,6 +306,22 @@
                 gap: 0.5rem;
                 min-width: 0;
             }
+            .main-flex-layout {
+                flex-direction: column;
+                gap: 0.7rem;
+            }
+            .group-container {
+                flex-direction: column;
+                gap: 0.6rem;
+            }
+            .static-icons-area {
+                flex-direction: row;
+                gap: 0.6rem;
+                padding: 0.7rem 0.1rem;
+                margin: 0 auto;
+                max-width: 100%;
+                justify-content: center;
+            }
         }
     </style>
 </head>
@@ -270,32 +345,68 @@
     {% endif %}
 
     {% if groups %}
-    {% for group in groups %}
-    <div class="group-container">
-        <h3 class="group-title">{{ group.name }}</h3>
-        <div class="main-container">
-            <div class="grid-group">
-                {% for seq in group.sequences[:6] %}
-                <div class="video-panel">
-                    <h4>{{ seq.name }}</h4>
-                    <div class="video-container">
-                        <img id="{{ group.name }}-frame-{{ loop.index0 }}" src="">
+    <!-- 只在第一个 group-container 前加 static-icons-area -->
+    <div class="main-flex-layout">
+        <div class="static-icons-area">
+            <img src="/static/car.png" alt="car" title="车辆">
+            <img src="/static/camera.png" alt="camera" title="摄像头">
+            <img src="/static/map.png" alt="map" title="地图">
+        </div>
+        <div style="flex:1;">
+            <div class="group-container">
+                <div style="flex:1;">
+                    <h3 class="group-title">{{ groups[0].name }}</h3>
+                    <div class="main-container">
+                        <div class="grid-group">
+                            {% for seq in groups[0].sequences[:6] %}
+                            <div class="video-panel">
+                                <h4>{{ seq.name }}</h4>
+                                <div class="video-container">
+                                    <img id="{{ groups[0].name }}-frame-{{ loop.index0 }}" src="">
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="featured-panel">
+                            <div class="video-panel">
+                                <h4>{{ groups[0].sequences[6].name }}</h4>
+                                <div class="video-container">
+                                    <img id="{{ groups[0].name }}-frame-6" src="">
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                {% endfor %}
             </div>
-
-            <div class="featured-panel">
-                <div class="video-panel">
-                    <h4>{{ group.sequences[6].name }}</h4>
-                    <div class="video-container">
-                        <img id="{{ group.name }}-frame-6" src="">
+            {% for group in groups[1:] %}
+            <div class="group-container">
+                <div style="flex:1;">
+                    <h3 class="group-title">{{ group.name }}</h3>
+                    <div class="main-container">
+                        <div class="grid-group">
+                            {% for seq in group.sequences[:6] %}
+                            <div class="video-panel">
+                                <h4>{{ seq.name }}</h4>
+                                <div class="video-container">
+                                    <img id="{{ group.name }}-frame-{{ loop.index0 }}" src="">
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="featured-panel">
+                            <div class="video-panel">
+                                <h4>{{ group.sequences[6].name }}</h4>
+                                <div class="video-container">
+                                    <img id="{{ group.name }}-frame-6" src="">
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
+            {% endfor %}
         </div>
     </div>
-    {% endfor %}
     {% endif %}
 
     <script>
