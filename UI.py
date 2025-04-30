@@ -24,16 +24,17 @@ def index():
     
     selected_scene = request.form.get('scene_folder') if request.method == 'POST' else None
     groups = []
-    
+    res_data = {}
+
     if selected_scene and selected_scene != "请选择场景":
         scene_path = os.path.join(FIXED_DIRECTORY, selected_scene)
         
-        # 检查必须存在的子目录
-        required_dirs = ['data', 'det']
+        # 检查必须存在的子目录（增加res目录检查）
+        required_dirs = ['data', 'det', 'res']
         if not all(os.path.exists(os.path.join(scene_path, d)) for d in required_dirs):
             return render_template('index.html', 
                                scene_folders=scene_folders,
-                               error="所选场景需要包含data和det目录")
+                               error="所选场景需要包含data、det和res目录")
         
         # 名称映射字典
         name_mapping = {
@@ -106,11 +107,56 @@ def index():
                 'name': '采集数据' if group_name == 'data' else '检测结果',  # 修改组名显示
                 'sequences': sequences
             })
+
+        res_path = os.path.join(scene_path, 'res')
+        res_dirs = sorted([d.name for d in os.scandir(res_path) if d.is_dir()][:7])
+        res_data = {}
+        
+        for sub in res_dirs:
+            sub_path = os.path.join(res_path, sub)
+            files = sorted([f for f in os.listdir(sub_path) if f.endswith('.txt')])
+            frame_data = []
+            
+            for file in files:
+                with open(os.path.join(sub_path, file), 'r') as f:
+                    lines = f.readlines()
+                    objects = []
+                    for line in lines:
+                        parts = line.strip().split()
+                        if sub == 'PointCloud':
+                            if len(parts) >= 8:
+                                obj = {
+                                    '类别': parts[0],
+                                    'x': parts[1],
+                                    'y': parts[2],
+                                    'z': parts[3],
+                                    'l': parts[4],
+                                    'w': parts[5],
+                                    'h': parts[6],
+                                    'yaw': parts[7]
+                                }
+                        else:
+                            if len(parts) >= 5:
+                                obj = {
+                                    '类别': parts[0],
+                                    'x': parts[1],
+                                    'y': parts[2],
+                                    'h': parts[3],
+                                    'w': parts[4]
+                                }
+                        if obj:
+                            objects.append(obj)
+                    frame_data.append({
+                        'filename': file,
+                        'objects': objects
+                    })
+            res_data[sub] = frame_data
     
     return render_template('index.html',
                          scene_folders=scene_folders,
                          groups=groups,
-                         selected_scene=selected_scene)
+                         selected_scene=selected_scene,
+                         res_data=res_data)
 
 @app.route('/get_image')
 def get_image():
