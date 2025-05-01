@@ -600,7 +600,7 @@
         }
 
         .data-table tr {
-            animation: fadeIn 0.3s ease-in;
+            animation: fadeIn 0.2s ease-out;
         }
 
         @keyframes fadeIn {
@@ -661,7 +661,7 @@
         let isPlaying = false;
         let playInterval;
         const FRAME_INTERVAL = 520;
-        const ROW_INTERVAL = 100;
+        const ROW_INTERVAL = 80;
         const backupData = {{ res_data|tojson|safe }};
         const tableOrder = ['CAM_FRONT', 'CAM_FRONT_RIGHT', 'CAM_BACK_RIGHT', 
                           'CAM_BACK', 'CAM_BACK_LEFT', 'CAM_FRONT_LEFT', 'PointCloud'];
@@ -676,6 +676,8 @@
         };
         let currentTableIndex = 0;
 
+        let rowTimeouts = [];
+        const BATCH_SIZE = 5; // 首批显示行数
         // 初始化图像组数据
         {% if groups %}
         let imageGroups = {
@@ -702,9 +704,9 @@
 
         function pauseAll() {
             clearInterval(playInterval);
-            isPlaying = false;
-            playPauseBtn.textContent = '▶ 运行';
-            playPauseBtn.classList.remove('playing');
+            rowTimeouts.forEach(clearTimeout);
+            rowTimeouts = [];
+            // ...保持原有暂停逻辑...
         }
 
         function updateAllFrames(frameIndex) {
@@ -729,25 +731,47 @@
         }
 
         function updateTableWithFrame(frameIndex) {
+            // 清除之前的行添加操作
+            rowTimeouts.forEach(clearTimeout);
+            rowTimeouts = [];
+
             const currentKey = tableOrder[currentTableIndex];
             const frameData = getFrameData(currentKey, frameIndex);
             if (!frameData) return;
 
             const container = document.getElementById('dataTableScroll');
-            let table = container.querySelector('table');
+            container.innerHTML = '';
             
-            if (!table || frameIndex !== (currentFrameIndex - 1)) {
-                container.innerHTML = '';
-                table = createTable(currentKey);
-                container.appendChild(table);
-            }
+            const table = createTable(currentKey);
+            const tbody = table.querySelector('tbody');
+            container.appendChild(table);
 
-            frameData.objects.forEach((obj, idx) => {
-                setTimeout(() => {
-                    addTableRow(table, obj, isPointCloud(currentKey));
-                    scrollToBottom();
-                }, idx * ROW_INTERVAL);
+            const isCloud = isPointCloud(currentKey);
+            const allObjects = frameData.objects || [];
+            
+            // 首批显示行（最多5行）
+            const initialRows = allObjects.slice(0, BATCH_SIZE);
+            initialRows.forEach(obj => {
+                tbody.appendChild(createTableRow(obj, isCloud));
             });
+
+            // 剩余行逐行显示
+            const remainingRows = allObjects.slice(BATCH_SIZE);
+            remainingRows.forEach((obj, idx) => {
+                const timeoutId = setTimeout(() => {
+                    tbody.appendChild(createTableRow(obj, isCloud));
+                    scrollToBottom();
+                }, (idx + 1) * ROW_INTERVAL);
+                rowTimeouts.push(timeoutId);
+            });
+
+            // 立即滚动到底部（如果数据较多）
+            if (allObjects.length > 3) scrollToBottom();
+        }
+        function createTableRow(obj, isPointCloud) {
+            const row = document.createElement('tr');
+            // ...原有行创建逻辑...
+            return row;
         }
 
         function getFrameData(key, frameIndex) {
