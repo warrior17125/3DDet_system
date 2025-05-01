@@ -1,13 +1,25 @@
 import os
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_file
 from PIL import Image
 import base64
 from io import BytesIO
+from datetime import datetime
+import pandas as pd
 
 app = Flask(__name__)
 
 # 固定目录路径
 FIXED_DIRECTORY = r"E:\Code\3DDet_system\scene_output"
+
+NAME_MAPPING = {
+    'CAM_FRONT': '前视角',
+    'CAM_FRONT_RIGHT': '右前视角',
+    'CAM_BACK_RIGHT': '右后视角',
+    'CAM_BACK': '后视角', 
+    'CAM_BACK_LEFT': '左后视角',
+    'CAM_FRONT_LEFT': '左前视角',
+    'PointCloud': '点云鸟瞰视角'
+}
 
 def get_image_base64(image_path):
     img = Image.open(image_path)
@@ -35,17 +47,7 @@ def index():
             return render_template('index.html', 
                                scene_folders=scene_folders,
                                error="所选场景需要包含data、det和res目录")
-        
-        # 名称映射字典
-        name_mapping = {
-            'CAM_FRONT': '前视角',
-            'CAM_FRONT_RIGHT': '右前视角',
-            'CAM_BACK_RIGHT': '右后视角',
-            'CAM_BACK': '后视角',
-            'CAM_BACK_LEFT': '左后视角',
-            'CAM_FRONT_LEFT': '左前视角',
-            'PointCloud': '点云鸟瞰视角'
-        }
+    
         
         # 处理两组数据
         for group_name in ['data', 'det']:
@@ -71,7 +73,7 @@ def index():
                     continue
                     
                 original_name = os.path.basename(sub)
-                display_name = name_mapping.get(original_name, original_name)
+                display_name = NAME_MAPPING.get(original_name, original_name)
                 
                 sequences.append({
                     'original_name': original_name,
@@ -158,6 +160,56 @@ def index():
                          selected_scene=selected_scene,
                          res_data=res_data)
 
+
+@app.route('/export_data', methods=['POST'])
+def export_data():
+    try:
+        data = request.json
+        res_data = data['resData']
+        scene_name = data['scene']
+        
+        # 创建内存文件对象
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            for sensor_type in res_data:
+                # 转换数据为DataFrame
+                rows = []
+                for frame in res_data[sensor_type]:
+                    timestamp = os.path.splitext(frame['filename'])[0]  # 提取不带后缀的文件名
+                    for obj in frame['objects']:
+                        row = {'时间戳': timestamp}
+                        row.update(obj)
+                        rows.append(row)
+                
+                df = pd.DataFrame(rows)
+                sheet_name = NAME_MAPPING.get(sensor_type, sensor_type)
+                
+                # 添加数据类型转换（示例）
+                if sensor_type == 'PointCloud':
+                    numeric_cols = ['x', 'y', 'z', 'l', 'w', 'h', 'yaw']
+                else:
+                    numeric_cols = ['x', 'y', 'h', 'w']
+                
+                for col in numeric_cols:
+                    if col in df.columns:
+                        df[col] = pd.to_numeric(df[col], errors='coerce')
+                
+                df.to_excel(writer, sheet_name=sheet_name[:31], index=False)
+                
+        # 生成带场景名称和当前时间的文件名
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"{scene_name}_检测结果_{timestamp}.xlsx"
+        
+        output.seek(0)
+        return send_file(
+            output,
+            download_name=filename,
+            as_attachment=True,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 @app.route('/get_image')
 def get_image():
     image_path = request.args.get('path')

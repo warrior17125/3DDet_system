@@ -268,9 +268,24 @@
         .table-controls {
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: 0.8rem;
+        }
+        #saveResult {
+            background: #2ecc71;
+            padding: 8px 16px;
+            border-radius: 20px;
+            transition: background 0.3s;
+            margin-right: 1rem; /* 与切换按钮保持间距 */
         }
 
+        #saveResult:hover {
+            background: #27ae60;
+            transform: scale(1.05);
+        }
+
+        #saveResult:active {
+            transform: scale(0.95);
+        }
         .table-btn {
             padding: 8px 16px;
             border-radius: 50%;
@@ -490,6 +505,7 @@
                 <div class="res-header">
                     <h3>目标信息</h3>
                     <div class="table-controls">
+                        <button id="saveResult" class="table-btn" title="保存全部数据">💾 保存</button>
                         <button id="prevTable" class="table-btn">❮</button>
                         <span id="currentTableName">前视角</span>
                         <button id="nextTable" class="table-btn">❯</button>
@@ -617,6 +633,42 @@
             this.submit();
         }, 5000);
     });
+    </script>
+
+    <script>
+        // 新增保存功能
+        document.getElementById('saveResult').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/export_data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        scene: '{{ selected_scene }}', // 传递当前场景名称
+                        resData: resData
+                    })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || '导出失败');
+                }
+                
+                // 下载处理保持不变
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `检测结果_${new Date().toISOString().slice(0,19).replace(/[:T-]/g,'')}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            } catch (error) {
+                alert(error.message);
+            }
+        });
     </script>
 
     <script>
