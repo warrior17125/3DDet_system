@@ -674,6 +674,7 @@
             isPlaying = true;
             playPauseBtn.textContent = '⏸ 暂停';
             playPauseBtn.classList.add('playing');
+            updateTable(); // 新增此行以在播放时更新表格
         }
 
         function pauseAll() {
@@ -752,34 +753,35 @@
 
             // 创建表格内容（去掉文件名）
             const tbody = document.createElement('tbody');
-            tableData.forEach(fileData => {
-                fileData.objects.forEach(obj => {
-                    const row = document.createElement('tr');
-                    
-                    if (isPointCloud) {
-                        row.innerHTML = `
-                            <td>${obj.类别}</td>
-                            <td>${obj.x}</td>
-                            <td>${obj.y}</td>
-                            <td>${obj.z}</td>
-                            <td>${obj.l}</td>
-                            <td>${obj.w}</td>
-                            <td>${obj.h}</td>
-                            <td>${obj.yaw}</td>
-                        `;
-                    } else {
-                        row.innerHTML = `
-                            <td>${obj.类别}</td>
-                            <td>${obj.x}</td>
-                            <td>${obj.y}</td>
-                            <td>${obj.h}</td>
-                            <td>${obj.w}</td>
-                        `;
-                    }
-                    tbody.appendChild(row);
+            if (isPlaying) {
+                tableData.forEach(fileData => {
+                    fileData.objects.forEach(obj => {
+                        const row = document.createElement('tr');
+                        
+                        if (isPointCloud) {
+                            row.innerHTML = `
+                                <td>${obj.类别}</td>
+                                <td>${obj.x}</td>
+                                <td>${obj.y}</td>
+                                <td>${obj.z}</td>
+                                <td>${obj.l}</td>
+                                <td>${obj.w}</td>
+                                <td>${obj.h}</td>
+                                <td>${obj.yaw}</td>
+                            `;
+                        } else {
+                            row.innerHTML = `
+                                <td>${obj.类别}</td>
+                                <td>${obj.x}</td>
+                                <td>${obj.y}</td>
+                                <td>${obj.h}</td>
+                                <td>${obj.w}</td>
+                            `;
+                        }
+                        tbody.appendChild(row);
+                    });
                 });
-            });
-
+            }
             table.appendChild(tbody);
             container.appendChild(table);
         }
@@ -794,10 +796,10 @@
             updateTable();
         });
 
-        // 初始化表格
-        if (Object.keys(resData).length > 0) {
-            updateTable();
-        }
+        // // 初始化表格
+        // if (Object.keys(resData).length > 0) {
+        //     updateTable();
+        // }
     </script>
 </body>
 </html>
